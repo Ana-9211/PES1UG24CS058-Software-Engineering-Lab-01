@@ -12,7 +12,7 @@ subtitle: Smart Lab Equipment & Slot Reservation Portal
 | Document ID | SADS-SLP-01 |
 | Version | 1.0 (Mini-Project Part-1) |
 | Author | Anagha N (PES1UG24CS058) |
-| Format | IEEE Std 1016 (software design description) / ISO/IEC/IEEE 42010 (architecture description) structure |
+| Format | Architecture and design sections organised in the IEEE-style structure requested by the assignment (modelled on IEEE 1016 / 42010 headings; no formal standards-compliance is claimed) |
 | Inputs | `SRS.md` (SRS-SLP-01) |
 | Part I | Architecture: §1–§7. Part II – Design: §8–§12 |
 
@@ -46,12 +46,12 @@ IDs follow the SRS: FR/NFR/SEC-REQ/UC. **C-nn** = architecture component, **SD-n
 
 ## 3. Architecture Pattern
 
-**Selected pattern: layered client–server architecture (three tiers: web client / application server / relational database), with a service-oriented decomposition of the business layer.**
+**Selected pattern: layered client–server architecture (three tiers: web client / application server / transactional database, assumed relational – A-13), with a service-oriented decomposition of the business layer.**
 
 Structure derived from the actual system:
 - Users work through a browser portal → a **client tier** (C-01).
 - All business rules (calibration, overlap, cut-off, penalty, RBAC) must be enforced centrally and cannot be trusted to the browser (NFR-002, SEC-REQ-05) → an **application-server tier** (C-02…C-10) exposing an HTTP/JSON API.
-- NFR-001/NFR-003 explicitly call for *database-level lock isolation*, i.e. a transactional relational store that is the single source of truth → a **data tier** (C-11, C-12).
+- NFR-001/NFR-003 explicitly call for *database-level lock isolation*, i.e. a transactional store (assumed relational, A-13) that is the single source of truth → a **data tier** (C-11, C-12).
 - Inside the server the layers are: API layer (entry, validation, security filter) → business services (reservation, calibration, inventory, return/penalty) → data access layer. Cross-cutting components (authentication, access control, audit, notification adapter) are separate so that each security requirement maps to one component.
 
 Why not alternatives: *MVC* describes the internal structure of a UI application rather than the system-level split between browser, server and database, so it is not used as the system pattern (the web client may use it internally, which is not constrained here). *Microservices* would add distributed transactions that conflict with the single-transaction locking required by NFR-003, and the scale (one lab) does not justify it. *Event-driven/publish-subscribe* is not needed: the only asynchronous interaction is the one notification request (DD-04).
@@ -62,7 +62,7 @@ Why not alternatives: *MVC* describes the internal structure of a UI application
 
 ![Figure 2 – UML Component Diagram (draw.io source: diagrams/component.drawio)](diagrams/component.png)
 
-Dashed arrows are UML dependencies (the arrow points to the component that provides the interface). The *Business Services* package groups C-05…C-08; arrows crossing its border apply to the contained services as listed in the table.
+Dashed arrows are UML dependencies (the arrow points to the component that provides the interface). The *Business Services* package groups C-05…C-08; arrows crossing its border apply to the contained services as listed in the table: *IReservation, ICalibration, IInventory, IReturn* from C-02 go to C-05, C-06, C-07, C-08 respectively; *IData* is used by all four; *ILog* is used only by C-06, C-07 and C-08; *INotify* is used only by C-05; *verifyCalibration* (UC-09) goes from C-05 to C-06.
 
 ### 4.2 Component descriptions
 
@@ -70,7 +70,7 @@ Dashed arrows are UML dependencies (the arrow points to the component that provi
 |---|---|---|---|---|
 | C-01 | Web Client | Browser UI for all use cases; shows role-specific menus; displays error messages; never enforces rules on its own. | Uses HTTP/JSON API of C-02. | UC-01…UC-08 UI; EIR-01; FR-001, FR-003, FR-007, FR-009 (display) |
 | C-02 | API Layer | Single entry point: routes requests, runs the security filter (session present, not expired → C-03; role allowed → C-04), validates inputs, maps component results and exceptions to HTTP responses (§11). | Provides HTTP/JSON API (§9). Uses IAuthenticate (C-03), IAuthorize (C-04), IReservation, ICalibration, IInventory, IReturn. | SEC-REQ-04, SEC-REQ-05, NFR-001 (request handling), EIR-04 |
-| C-03 | Authentication & Session Service | Verifies credentials, issues a session token bound to user and role, tracks last activity and expires sessions after 30 min inactivity. | Provides IAuthenticate, ISession. Uses C-11 (credentials, sessions). | FR-006, NFR-002, SEC-REQ-02, SEC-REQ-04 |
+| C-03 | Authentication & Session Service | Verifies credentials, issues a session token bound to user and role, tracks last activity and expires sessions after 30 min inactivity. | Provides IAuthenticate, ISession. Uses C-11 (credentials, sessions). | FR-006, NFR-002, SEC-REQ-02, SEC-REQ-04, SEC-REQ-07 |
 | C-04 | Access Control Guard (RBAC) | Decides whether the role in the session may call an operation (technician-only vs student-only). | Provides IAuthorize. Uses ISession (C-03). | NFR-002, SEC-REQ-01, SEC-REQ-03 (role part) |
 | C-05 | Reservation Service | Availability query; reserve (duration, horizon, overlap, own-overlap); token generation; cancel (ownership, cut-off, release); own history. Runs the reservation transaction. | Provides IReservation. Uses ICalibration (C-06), INotify (C-09), IData (C-11). | FR-001, FR-003, FR-007, FR-010, NFR-001, NFR-003, SEC-REQ-03; UC-02…UC-05, UC-10 |
 | C-06 | Calibration Service | Verifies calibration status (UC-09) and updates it (UC-07). | Provides ICalibration. Uses IData, ILog. | FR-002, FR-008, SEC-REQ-06 |
@@ -88,11 +88,11 @@ Every component has at least one related requirement; no requirement is without 
 
 | Requirement | Use case | Components | Design elements | Tests |
 |---|---|---|---|---|
-| FR-001 | UC-02, UC-03, UC-10 | C-01, C-02, C-05, C-11, C-12 | SD-01; API `GET /equipment/{id}/availability`, `POST /reservations`; DD-01, DD-02 | TC-01–04, 17, 21 |
+| FR-001 | UC-02, UC-03, UC-10 | C-01, C-02, C-05, C-11, C-12 | SD-01 (parts 1–2); API `GET /equipment`, `GET /equipment/{id}/availability`, `POST /reservations`; DD-01, DD-02, DD-03 | TC-01–04, 17, 21, 24 |
 | FR-002 | UC-03, UC-09 | C-05, C-06, C-11 | SD-01 (alt A1); `409 CALIBRATION_INVALID` | TC-01, 05, 13 |
 | FR-003 | UC-04 | C-05, C-11 | API `POST /reservations/{id}/cancel`; DD-05 | TC-06, 07, 23 |
 | FR-004 | UC-06, UC-12 | C-08, C-10, C-11 | SD-02; API `POST /reservations/{id}/return` | TC-08, 09, 22 |
-| FR-005 | UC-08 | C-07, C-10, C-11 | API `POST/PUT/DELETE /equipment`; DD-06 | TC-10, 21, 22 |
+| FR-005 | UC-08 | C-07, C-10, C-11 | API `POST/PUT/DELETE /equipment`; DD-06 | TC-10, 21, 22, 25 |
 | FR-006 | UC-01 | C-03, C-11 | API `POST /auth/login` | TC-11, 19, 20 |
 | FR-007 | UC-05 | C-05, C-11 | API `GET /reservations/me` | TC-12 |
 | FR-008 | UC-07 | C-06, C-10, C-11 | API `PUT /equipment/{id}/calibration` | TC-13, 22 |
@@ -101,7 +101,7 @@ Every component has at least one related requirement; no requirement is without 
 | NFR-001 | UC-03 | C-02, C-05, C-11 | DD-02, DD-04 | TC-16 |
 | NFR-002 | UC-06/07/08 | C-03, C-04, C-02 | SD-02 (security filter); §7 | TC-18, 19 |
 | NFR-003 | UC-03 | C-05, C-11, C-12 | DD-02; SD-01 | TC-17 |
-| SEC-REQ-01…06 | – | see §7 | see §7 | TC-11, 12, 18–23 |
+| SEC-REQ-01…07 | – | see §7 | see §7 | TC-11, 12, 18–23 |
 
 ## 6. Data View
 
@@ -128,7 +128,8 @@ Browser (untrusted) → API Layer (first trusted point: security filter and vali
 |---|---|---|---|---|
 | SEC-OBJ-01 | SEC-REQ-01 | C-04 Access Control Guard, invoked by C-02 for every operation | Static operation → allowed-roles table; technician-only: calibration, inventory, return, list-all-reservations; deny by default; 403 `FORBIDDEN_ROLE`. | TC-18 |
 | SEC-OBJ-01 | SEC-REQ-02 | C-03 | `lastActivity` updated on every valid request; request rejected if now − lastActivity > 30 min; 401 `SESSION_EXPIRED`. | TC-19 |
-| SEC-OBJ-01 | SEC-REQ-04 | C-03, C-02 security filter | Every endpoint except `POST /auth/login` requires a valid session token; login returns one generic error for unknown user and wrong password; credentials stored only as a verifier and excluded from logs (C-10 / §11.4). | TC-11, TC-20 |
+| SEC-OBJ-01 | SEC-REQ-04 | C-02 security filter, C-03 | Every endpoint except `POST /auth/login` requires a valid session token; a missing or malformed token gets 401 before any service is called. | TC-20 |
+| SEC-OBJ-01 | SEC-REQ-07 | C-03; logging rules of §11.4 | Login returns one generic error for unknown user and wrong password; credentials are stored only as a verifier (never plain text) and are excluded from logs and responses. | TC-11, TC-20 |
 | SEC-OBJ-03 | SEC-REQ-03 | C-05 (+ C-04 for role) | Ownership check `reservation.studentId == session.userId` before read or cancel; 403 `FORBIDDEN_RESOURCE` with no reservation data in the body. History query is filtered by the session's user id, not by a client-supplied id. | TC-12, TC-23 |
 | SEC-OBJ-02 | SEC-REQ-05 | C-02 input validation; C-11 | Schema validation (type, format, range) before any service call; parameterised statements only in C-11; server-side horizon / duration rules. | TC-21 |
 | SEC-OBJ-04 | SEC-REQ-06 | C-10 | Services C-06, C-07, C-08 call `ILog` after a successful privileged action, recording user id, role, action, target, time (same transaction as the change, DD-07). | TC-22 |
@@ -153,7 +154,7 @@ Deployment assumption A-10 (HTTPS) protects session tokens in transit; it is a c
 
 ## 9. API Design
 
-The portal exposes an HTTP/JSON API consumed by its own web client (C-01). Base path `/api/v1`. Content type `application/json`. All endpoints except `POST /auth/login` require header `Authorization: Bearer <session token>` (SEC-REQ-04). Timestamps are ISO-8601. Role column: S = Student, T = Lab Technician.
+**Does the project have an API? Yes, in the sense required by Lab 1:** NFR-002 refers to "technician-only endpoints", so the browser client talks to the server through HTTP endpoints. Lab 1 does not define them; the catalogue below is a design derived one-to-one from the use cases (column *Use case*). Endpoints 10 and 12 are the only additions that no Lab 1 use case names explicitly: 10 is needed to check ownership (SEC-REQ-03, TC-12, TC-23) and 12 lets a technician select "the reserved item" in UC-06. There is no public or third-party API. The portal exposes an HTTP/JSON API consumed by its own web client (C-01). Base path `/api/v1`. Content type `application/json`. All endpoints except `POST /auth/login` require header `Authorization: Bearer <session token>` (SEC-REQ-04). Timestamps are ISO-8601. Role column: S = Student, T = Lab Technician.
 
 ### 9.1 Endpoint catalogue
 
@@ -222,13 +223,17 @@ The two sequence diagrams model use cases UC-03 (the core use case specified in 
 
 ### 10.1 SD-01 – UC-03 Reserve Equipment Slot
 
-![Figure 3 – Sequence Diagram 1: Reserve Equipment Slot (draw.io source: diagrams/sequence-01.drawio)](diagrams/sequence-01.png)
+UC-03 has two diagram parts because the interaction involves eight participants; splitting it keeps the text legible. Part 1 ends in the branch "status = Valid" and part 2 starts from it.
 
-Covers: FR-001, FR-002, FR-009, FR-010, NFR-001, NFR-003; alternate flows A1 (calibration), A2 (conflict), A3 (invalid session/input); the «include» use cases UC-09, UC-10, UC-11. Steps 4–5 of the Lab 1 flow (calibration, overlap) appear in the same order. The overlap check and the insert happen inside one locked transaction (DD-02). The request to the Notification System is submitted after commit (DD-04).
+![Figure 3 – Sequence Diagram 1, part 1 of 2: request validation and calibration check (draw.io source: diagrams/sequence-01a.drawio)](diagrams/sequence-01a.png)
+
+![Figure 4 – Sequence Diagram 1, part 2 of 2: reservation, token and notification (draw.io source: diagrams/sequence-01b.drawio)](diagrams/sequence-01b.png)
+
+Covers: FR-001, FR-002, FR-009, FR-010, NFR-001, NFR-003; alternate flows A1 (calibration), A2 (conflict), A3 (invalid session/input), A4 (student's own overlap); the «include» use cases UC-09, UC-10, UC-11. Steps 4–8 of the Lab 1 flow (calibration, overlap check, token, lock, notification) appear in the same order. The overlap check and the insert happen inside one locked transaction (DD-02). The request to the Notification System is submitted after commit (DD-04).
 
 ### 10.2 SD-02 – UC-06 Return Equipment
 
-![Figure 4 – Sequence Diagram 2: Return Equipment (draw.io source: diagrams/sequence-02.drawio)](diagrams/sequence-02.png)
+![Figure 5 – Sequence Diagram 2: Return Equipment (draw.io source: diagrams/sequence-02.drawio)](diagrams/sequence-02.png)
 
 Covers: FR-004, NFR-002, SEC-REQ-01, SEC-REQ-02, SEC-REQ-06; the «extend» use case UC-12 appears as the `opt` fragment taken only when `returnTime > slotEnd`. The security filter rejects expired sessions (401) and non-technician roles (403) before the service is called.
 
@@ -272,4 +277,6 @@ When two requests compete for a slot, the one that loses the lock re-checks and 
 | A-06 | Notification failure keeps the reservation. | DD-04, TC-14 |
 | A-07 | Equipment with future reservations cannot be removed. | DD-06 |
 | A-10 | HTTPS in deployment; password-verifier algorithm not chosen. | §7 |
+| A-13 | A database with transactions and locking (relational) is assumed from NFR-001; no product chosen. | §3, §6 |
+| A-14 | FR-010 reading of the UC-03 precondition (student's own overlap on any equipment). | FR-010, TC-15 |
 | – | Technology stack, hosting, and Notification System protocol not chosen. | whole document |

@@ -10,6 +10,7 @@ class SVG:
         self.w, self.h, self.el = w, h, []
         self.prims = []   # structured copy of everything drawn (used for the draw.io export)
         self._rec = True
+        self.fscale = 1.0
 
     def rect(self, x, y, w, h, fill="none", stroke="#222", sw=1.4, rx=0, dash=None):
         self._p("rect", x=x, y=y, w=w, h=h, fill=fill, stroke=stroke, sw=sw, dash=dash)
@@ -41,6 +42,7 @@ class SVG:
         self.el.append(f'<polyline points="{p}" fill="none" stroke="{stroke}" stroke-width="{sw}"{d}/>')
 
     def text(self, x, y, s, fs=13, anchor="middle", weight="normal", fill="#111", italic=False):
+        fs = round(fs * self.fscale, 1)
         self._p("text", x=x, y=y, s=s, fs=fs, anchor=anchor, weight=weight, fill=fill, italic=italic)
         st = ' font-style="italic"' if italic else ""
         self.el.append(f'<text x="{x:.1f}" y="{y:.1f}" font-family="{FONT}" font-size="{fs}" '
