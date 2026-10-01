@@ -1,6 +1,6 @@
 """Generates the four UML diagrams (SVG + PNG). Run: python make_diagrams.py"""
 import os
-from svglib import SVG, ellipse_edge, rect_edge
+from svglib import SVG, ellipse_edge, rect_edge, save_drawio
 import pymupdf
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -64,7 +64,7 @@ def use_case():
     s.text(mx + 42, my + 2, "«include»", fs=11, italic=True)
     mx, my = rel("UC-12", "UC-06")
     s.text(mx, my - 12, "«extend»", fs=11, italic=True)
-    s.text(mx, my + 22, "[return time > slot end]", fs=10, italic=True)
+    s.text(mx + 14, my + 24, "[return time > slot end]", fs=10, italic=True, anchor="start")
     s.actor(stu[0], stu[1] - 10, "Student")
     s.actor(tech[0], tech[1] - 10, "Lab Technician")
     s.text(notif[0], notif[1] + 60, "Notification System", fs=13, weight="bold")
@@ -82,7 +82,7 @@ def use_case():
         s.rect(1022, 862 + i * 22, 24, 14, fill=UCFILL[k], stroke="#555", sw=1)
         s.text(1054, 874 + i * 22, t, fs=11, anchor="start")
     s.text(1020, 940, "Dashed arrow = UML dependency", fs=10.5, anchor="start", italic=True)
-    s.save(os.path.join(OUT, "use-case.svg"))
+    s.save(os.path.join(OUT, "use-case.svg")); save_drawio(s, os.path.join(OUT, "use-case.drawio"), "use-case")
 
 
 # ----------------------------------------------------------------- component
@@ -101,8 +101,8 @@ def component():
     comps = {
         "C-01": (105, 160, "Web Client", 140, "«component»"),
         "C-02": (360, 160, "API Layer\ninput validation, security filter", 230, "«component»"),
-        "C-03": (330, 330, "Authentication &\nSession Service", 170, "«component»"),
-        "C-04": (330, 450, "Access Control\nGuard (RBAC)", 170, "«component»"),
+        "C-03": (350, 330, "Authentication &\nSession Service", 150, "«component»"),
+        "C-04": (350, 450, "Access Control\nGuard (RBAC)", 150, "«component»"),
         "C-05": (730, 345, "Reservation Service", W, "«component»"),
         "C-06": (730, 460, "Calibration Service", W, "«component»"),
         "C-07": (730, 575, "Inventory Service", W, "«component»"),
@@ -145,9 +145,9 @@ def component():
         dep([p1, p2], label, lpos, anchor)
 
     edge("C-01", "C-02", "HTTP / JSON", (210, 150))
-    edge("C-02", "C-03", "IAuthenticate", (335, 255), "end")
-    dep([(440, 192), (440, 450), (415, 450)], "IAuthorize", (448, 400), "start")
-    edge("C-04", "C-03", "ISession", (338, 394), "start")
+    edge("C-02", "C-03", "IAuthenticate", (352, 258), "end")
+    dep([(260, 192), (260, 450), (275, 450)], "IAuthorize", (236, 505), "start")
+    edge("C-04", "C-03", "ISession", (358, 394), "start")
     # API -> services bus
     s.line(475, 160, 520, 160, dash="6,4")
     s.line(520, 160, 520, 690, dash="6,4")
@@ -170,12 +170,12 @@ def component():
     # package -> Data Access Layer
     dep([(900, 445), (970, 445)], "IData", (935, 464))
     # Auth -> DAL over the top
-    dep([(415, 316), (480, 316), (480, 245), (940, 245), (940, 430), (970, 430)], "IData (credentials, sessions)", (850, 238))
+    dep([(425, 316), (480, 316), (480, 245), (940, 245), (940, 430), (970, 430)], "IData (credentials, sessions)", (850, 238))
     # Audit -> DAL
     dep([(815, 800), (940, 800), (940, 480), (970, 480)], "IData (audit records)", (960, 790), "start")
     # DAL -> DB
     dep([(1045, 492), (1045, 668)], "SQL / transactions", (1055, 585), "start")
-    s.save(os.path.join(OUT, "component.svg"))
+    s.save(os.path.join(OUT, "component.svg")); save_drawio(s, os.path.join(OUT, "component.drawio"), "component")
 
 
 # ----------------------------------------------------------------- sequence
@@ -273,7 +273,7 @@ def sequence(name, title, parts, items, spacing=190, fs=12.5):
                    fill="#fffbd6", stroke="#999", sw=1)
             for j, ln in enumerate(lines):
                 s.text(x0 + 8, yy + 16 + j * 15, ln, fs=11, anchor="start")
-    s.save(os.path.join(OUT, name + ".svg"))
+    s.save(os.path.join(OUT, name + ".svg")); save_drawio(s, os.path.join(OUT, name + ".drawio"), name)
 
 
 def sd01():

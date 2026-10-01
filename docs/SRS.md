@@ -168,7 +168,7 @@ Open item (not a requirement): transport encryption and password-storage algorit
 
 ### 5.1 Use Case Diagram
 
-![Figure 1 – UML Use Case Diagram](diagrams/use-case.png)
+![Figure 1 – UML Use Case Diagram (editable draw.io source: diagrams/use-case.drawio)](diagrams/use-case.png)
 
 The diagram preserves the Lab 1 diagram (same actors, 12 use cases, three «include» relationships from UC-03 and one «extend» of UC-06 by UC-12) and adds use-case IDs. One correction: the Lab 1 diagram linked **Student** to *Return Equipment*, but FR-004 makes returns a Lab Technician function; the association was removed (see `Gap_Analysis.md`).
 
