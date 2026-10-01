@@ -12,7 +12,7 @@ subtitle: Smart Lab Equipment & Slot Reservation Portal
 | Document ID | TP-SLP-01 |
 | Version | 1.0 (Mini-Project Part-1) |
 | Author | Anagha N (PES1UG24CS058) |
-| Format | Follows the IEEE Std 829 test-plan structure; section numbers 1–5 and §5.1 as required by the assignment |
+| Format | Organised in an IEEE 829-style test-plan structure as requested by the assignment (sections 1–5, §5.1 Security Validation); no formal standards-compliance is claimed |
 | Inputs | `SRS.md` (SRS-SLP-01), `Software_Architecture_and_Design.md`, `traceability/Requirements_Traceability.md` |
 
 > **Execution status.** The repository contains requirements and design documents only; the portal is not implemented yet. **No test case has been executed.** Every test case below has status *Not Executed* and an empty *Actual Result*. Results are to be filled in when an implementation exists.
@@ -20,7 +20,7 @@ subtitle: Smart Lab Equipment & Slot Reservation Portal
 ## 1. Introduction
 
 ### 1.1 Purpose
-This plan defines how the requirements of SRS-SLP-01 (FR-001…FR-010, NFR-001…NFR-003, SEC-REQ-01…SEC-REQ-06) will be verified, and contains the test cases that cover them.
+This plan defines how the requirements of SRS-SLP-01 (FR-001…FR-010, NFR-001…NFR-003, SEC-REQ-01…SEC-REQ-07) will be verified, and contains the test cases that cover them.
 
 ### 1.2 Scope
 Verification of the Smart Lab Equipment & Slot Reservation Portal at the system level through its HTTP API and web UI. Component-level (unit) testing is planned by the implementer once the technology stack is chosen and is not enumerated here.
@@ -48,11 +48,11 @@ Version under test: *to be recorded at execution time* (no build exists yet).
 
 | Feature | Requirement | Use case | Test cases |
 |---|---|---|---|
-| View availability and reserve a slot (duration, horizon, overlap) | FR-001 | UC-02, UC-03, UC-10 | TC-01, TC-02, TC-03, TC-04, TC-17, TC-21 |
+| View availability and reserve a slot (clauses a–e: availability, duration, horizon, overlap, token) | FR-001 | UC-02, UC-03, UC-10 | TC-01, TC-02, TC-03, TC-04, TC-17, TC-21, TC-24 |
 | Calibration check before confirmation | FR-002 | UC-03, UC-09 | TC-01, TC-05, TC-13 |
 | Cancellation and 5-second slot release | FR-003 | UC-04 | TC-06, TC-07, TC-23 |
 | Return recording and late-return flag | FR-004 | UC-06, UC-12 | TC-08, TC-09, TC-22 |
-| Equipment inventory add / update / remove | FR-005 | UC-08 | TC-10, TC-21, TC-22 |
+| Equipment inventory add / update / remove | FR-005 | UC-08 | TC-10, TC-21, TC-22, TC-25 |
 | Login and role assignment | FR-006 | UC-01 | TC-11, TC-19, TC-20 |
 | Own reservation history | FR-007 | UC-05 | TC-12 |
 | Calibration status update | FR-008 | UC-07 | TC-13, TC-22 |
@@ -61,7 +61,7 @@ Version under test: *to be recorded at execution time* (no build exists yet).
 | Reservation latency ≤ 200 ms | NFR-001 | UC-03 | TC-16 |
 | RBAC and 30-minute session expiry | NFR-002 | UC-06/07/08 | TC-18, TC-19 |
 | No double booking under concurrency | NFR-003 | UC-03 | TC-17 |
-| Security requirements | SEC-REQ-01…06 | – | see §5.1 |
+| Security requirements | SEC-REQ-01…07 | – | see §5.1 |
 
 ## 4. Features Not to be Tested
 
@@ -83,7 +83,7 @@ Test levels: system test through the HTTP API (preferred for repeatability) with
 
 | Area | Approach | Test cases |
 |---|---|---|
-| Functional | Scripted request/response checks with state verification in the data store; both success and alternate flows A1/A2/A3 of UC-03. | TC-01 … TC-15 |
+| Functional | Scripted request/response checks with state verification in the data store; success and alternate flows A1–A4 of UC-03. | TC-01 … TC-15, TC-24, TC-25 |
 | Non-functional – performance | Fire the A-03 load at the reservation endpoint and record per-request duration; verify against 200 ms. | TC-16 |
 | Non-functional – concurrency / integrity | Submit N identical-slot requests simultaneously; verify exactly one confirmation and one stored record. | TC-17 |
 | Non-functional – access control, session | See §5.1. | TC-18, TC-19 |
@@ -95,12 +95,12 @@ Objective: demonstrate that each security requirement of SRS §4.2 is enforced, 
 
 | Security objective | Security requirement | Control (Architecture §7) | Validation method | Test case | Pass criterion |
 |---|---|---|---|---|---|
-| SEC-OBJ-01 Authenticated & authorized access | SEC-REQ-01 | C-04 Access Control Guard | Call every technician-only endpoint with a Student session | TC-18 | HTTP 403 each time; data unchanged |
+| SEC-OBJ-01 Authenticated & authorized access, SEC-OBJ-02 Integrity | SEC-REQ-01 | C-04 Access Control Guard | Call every technician-only endpoint with a Student session | TC-18 | HTTP 403 each time; data unchanged |
 | SEC-OBJ-01 | SEC-REQ-02 | C-03 Authentication & Session Service | Use a session idle for 29 and 31 minutes (test clock) | TC-19 | 29 min → success; 31 min → HTTP 401 |
-| SEC-OBJ-01 | SEC-REQ-04 | C-03, C-02 security filter | Call protected endpoints with no / invalid token; compare login error text; inspect logs & stored credentials | TC-11, TC-20 | HTTP 401; identical error text; no plaintext credential in log or store |
+| SEC-OBJ-01 | SEC-REQ-04 | C-02 security filter, C-03 | Call every protected endpoint with no token and with a malformed token | TC-20 | HTTP 401 for every endpoint; no data returned |
+| SEC-OBJ-01 | SEC-REQ-07 | C-03 Authentication & Session Service; C-10 / §11.4 logging rules | Compare login error text for unknown user vs. wrong password; inspect logs, responses and stored credentials | TC-11, TC-20 | Identical error text; no plaintext credential in log, response or store |
 | SEC-OBJ-03 Confidentiality of own data | SEC-REQ-03 | C-04 + C-05 ownership check | Student B reads / cancels Student A's reservation | TC-12, TC-23 | HTTP 403; no content leaked; reservation unchanged |
 | SEC-OBJ-02 Integrity | SEC-REQ-05 | C-02 input validation, C-11 parameterised access | Boundary, malformed and injection-style inputs | TC-21 | HTTP 400/422; no data change; tables intact |
-| SEC-OBJ-02, SEC-OBJ-01 | SEC-REQ-01 | C-04 | (also) unauthorized calibration/inventory change attempts | TC-18 | as above |
 | SEC-OBJ-04 Accountability | SEC-REQ-06 | C-10 Audit Logger | Perform privileged actions, then read audit records | TC-22 | One record per action with user, role, action, target, timestamp |
 
 Security test notes: tests use only the system under test in the lab environment; no third-party service is attacked. Injection inputs are limited to a short set of standard strings (e.g. `' OR '1'='1`, `'; DROP TABLE equipment;--`).
@@ -125,8 +125,8 @@ A test case *passes* when every expected result in its table is observed. It *fa
 ## 7. Test Data
 | Data | Content |
 |---|---|
-| Users | `studentA`, `studentB` (role Student); `tech1` (role Lab Technician). Passwords set by the tester; not recorded in this document. |
-| Equipment | EQ-01 *Oscilloscope* – Valid; EQ-02 *Oscilloscope* – Valid (alternative); EQ-03 *Logic Analyzer* – Expired; EQ-04 *FPGA Board* – Pending. |
+| Users | `studentA`, `studentB`, `student01`…`student20` (role Student); `tech1` (role Lab Technician). Passwords set by the tester; not recorded in this document. |
+| Equipment | EQ-01 *Oscilloscope* – Valid; EQ-02 *Oscilloscope* – Valid (alternative); EQ-03 *Logic Analyzer* – Expired; EQ-04 *FPGA Board* – Pending; EQ-05 *Logic Analyzer* – Valid (only loaded for TC-05 and TC-24). |
 | Reservations | Created by the tests themselves; the store is reset to the baseline before each test case. |
 | Time values | Defined relative to "now" (e.g. *now + 1 day 10:00*). |
 
@@ -169,7 +169,7 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 | TC-08 | FR-004 | Late return sets penalty flag | Functional | Not Executed |
 | TC-09 | FR-004 | On-time / at-end return has no flag | Functional, Boundary | Not Executed |
 | TC-10 | FR-005 | Inventory add / update / remove | Functional | Not Executed |
-| TC-11 | FR-006, SEC-REQ-04 | Valid and invalid login | Functional, Security | Not Executed |
+| TC-11 | FR-006, SEC-REQ-07 | Valid and invalid login | Functional, Security | Not Executed |
 | TC-12 | FR-007, SEC-REQ-03 | Own history only | Functional, Security | Not Executed |
 | TC-13 | FR-008, FR-002 | Calibration status update takes effect | Functional | Not Executed |
 | TC-14 | FR-009 | Confirmation + notification, notification failure | Functional, Fault injection | Not Executed |
@@ -178,10 +178,12 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 | TC-17 | NFR-003, FR-001 | Concurrent requests, one winner | Non-functional (Concurrency) | Not Executed |
 | TC-18 | NFR-002, SEC-REQ-01 | Student blocked from technician functions | Security | Not Executed |
 | TC-19 | NFR-002, SEC-REQ-02, FR-006 | 30-minute session expiry | Security, Boundary | Not Executed |
-| TC-20 | SEC-REQ-04, FR-006 | Unauthenticated access, credential handling | Security | Not Executed |
+| TC-20 | SEC-REQ-04, SEC-REQ-07, FR-006 | Unauthenticated access, credential handling | Security | Not Executed |
 | TC-21 | SEC-REQ-05, FR-001, FR-005 | Invalid input and injection strings | Security, Negative | Not Executed |
 | TC-22 | SEC-REQ-06, FR-004, FR-005, FR-008 | Audit records for privileged actions | Security | Not Executed |
 | TC-23 | SEC-REQ-03, FR-003 | Cancel another student's reservation | Security, Negative | Not Executed |
+| TC-24 | FR-001 | Availability display and filters | Functional | Not Executed |
+| TC-25 | FR-005 | Remove equipment that has a future reservation | Functional, Negative | Not Executed |
 
 **Detailed test cases**
 
@@ -189,7 +191,7 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 
 | Field | Content |
 |---|---|
-| Requirement ID | FR-001, FR-002 (UC-03 main flow) |
+| Requirement ID | FR-001(e), FR-002(a) (UC-03 main flow) |
 | Objective | A student reserves a slot on Valid equipment and receives a token. |
 | Preconditions | `studentA` logged in; EQ-01 Valid; no reservations exist. |
 | Test Data | EQ-01; start = now + 1 day 10:00; duration 90 min. |
@@ -202,7 +204,7 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 
 | Field | Content |
 |---|---|
-| Requirement ID | FR-001 |
+| Requirement ID | FR-001(b) |
 | Objective | Slot of exactly 120 minutes is accepted; 121 minutes is rejected. |
 | Preconditions | `studentA` logged in; EQ-01 Valid, free. |
 | Test Data | start = now + 1 day 10:00; durations 120 and 121 min (separate requests, store reset between). |
@@ -215,7 +217,7 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 
 | Field | Content |
 |---|---|
-| Requirement ID | FR-001 |
+| Requirement ID | FR-001(c) |
 | Objective | A start time exactly 7 days after the request is accepted; later is rejected. |
 | Preconditions | `studentA` logged in; EQ-01 Valid, free; test clock fixed at T. |
 | Test Data | start = T + 7 days; start = T + 7 days + 1 min; duration 60 min. |
@@ -228,7 +230,7 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 
 | Field | Content |
 |---|---|
-| Requirement ID | FR-001 |
+| Requirement ID | FR-001(d) |
 | Objective | A second student cannot reserve a slot that overlaps a Confirmed reservation of the same equipment. |
 | Preconditions | `studentA` has Confirmed EQ-01 10:00–11:00 (day D). `studentB` logged in. |
 | Test Data | `studentB` requests EQ-01, D 10:30, 60 min. Also D 11:00, 60 min (adjacent). |
@@ -241,12 +243,12 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 
 | Field | Content |
 |---|---|
-| Requirement ID | FR-002 |
+| Requirement ID | FR-002(b), FR-002(c) |
 | Objective | Equipment whose calibration is not Valid cannot be reserved; an alternative is suggested. |
-| Preconditions | `studentA` logged in; EQ-03 Expired; EQ-04 Pending; another Valid *Logic Analyzer* is present for the suggestion check (add EQ-05 Valid, Logic Analyzer). |
+| Preconditions | `studentA` logged in; EQ-03 Expired; EQ-04 Pending; EQ-05 (*Logic Analyzer*, Valid) exists as the alternative for the suggestion check. |
 | Test Data | Request for EQ-03 and for EQ-04, tomorrow 10:00, 60 min. |
 | Steps | 1. Reserve EQ-03. 2. Reserve EQ-04. |
-| Expected Result | Both → HTTP 409 `CALIBRATION_INVALID` with message "This equipment is currently unavailable for booking — calibration required."; EQ-03 response suggests EQ-05; no reservation record created. |
+| Expected Result | Both → HTTP 409 `CALIBRATION_INVALID` with message "This equipment is currently unavailable for booking — calibration required."; the EQ-03 response suggests EQ-05 and the EQ-04 response suggests none (no other FPGA board); no reservation record created. |
 | Actual Result | – |
 | Pass/Fail | Not Executed |
 
@@ -319,7 +321,7 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 
 | Field | Content |
 |---|---|
-| Requirement ID | FR-006, SEC-REQ-04 |
+| Requirement ID | FR-006, SEC-REQ-07 |
 | Objective | Valid credentials give a session with the correct role; invalid credentials give no session and a generic error. |
 | Preconditions | Accounts `studentA`, `tech1` exist. |
 | Test Data | Valid pairs for both users; unknown user `nobody`/any password; `studentA` with a wrong password. |
@@ -386,8 +388,8 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 |---|---|
 | Requirement ID | NFR-001 |
 | Objective | Reservation requests are processed in ≤ 200 ms under the A-03 test load. |
-| Preconditions | Baseline data; 20 student accounts (or sessions) available; timing facility ready. |
-| Test Data | 20 concurrent requests, each for a different free slot of EQ-01 / EQ-02 (so all are legitimate and can succeed). |
+| Preconditions | Baseline data; accounts `student01`…`student20` logged in; timing facility ready. |
+| Test Data | 20 concurrent requests, one per student, each for a different non-overlapping slot of EQ-01 or EQ-02 (so every request is legitimate and can succeed). |
 | Steps | 1. Send the 20 requests simultaneously. 2. Record the processing time of each (request received → response sent). 3. Repeat the run 5 times. |
 | Expected Result | Every recorded processing time ≤ 200 ms in all runs; all 20 requests per run succeed. |
 | Actual Result | – |
@@ -399,7 +401,7 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 |---|---|
 | Requirement ID | NFR-003, FR-001 |
 | Objective | With simultaneous identical-slot requests, exactly one reservation is confirmed. |
-| Preconditions | EQ-01 Valid and free at slot X; 20 student sessions. |
+| Preconditions | EQ-01 Valid and free at slot X; accounts `student01`…`student20` logged in. |
 | Test Data | 20 simultaneous requests for EQ-01, slot X (tomorrow 10:00, 60 min). |
 | Steps | 1. Release all 20 requests at the same instant. 2. Count responses by status. 3. Query the store for reservations of EQ-01 at X. |
 | Expected Result | Exactly 1 × HTTP 201; 19 × HTTP 409 `SLOT_CONFLICT`; exactly 1 stored reservation for the slot; exactly one token issued. |
@@ -436,12 +438,12 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 
 | Field | Content |
 |---|---|
-| Requirement ID | SEC-REQ-04, FR-006 |
+| Requirement ID | SEC-REQ-04, SEC-REQ-07, FR-006 |
 | Objective | Protected functions need a valid session; credentials are not exposed. |
 | Preconditions | None logged in. |
 | Test Data | Every protected endpoint of Design §9 called with (a) no token, (b) a malformed token. Login attempts with a known password. |
 | Steps | 1. Call each protected endpoint without a token, then with a malformed token. 2. Perform successful and failed logins. 3. Inspect the application log, audit records and the stored user record. |
-| Expected Result | 1: HTTP 401 `AUTHENTICATION_REQUIRED` for every endpoint, no data. 3: the password does not appear in any log or response, and is not stored as plain text. |
+| Expected Result | 1: HTTP 401 `AUTHENTICATION_REQUIRED` for every endpoint, no data (SEC-REQ-04). 3: the password does not appear in any log or response, and is not stored as plain text (SEC-REQ-07). |
 | Actual Result | – |
 | Pass/Fail | Not Executed |
 
@@ -484,15 +486,41 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 | Actual Result | – |
 | Pass/Fail | Not Executed |
 
+**TC-24 – Availability display and filters** (Functional)
+
+| Field | Content |
+|---|---|
+| Requirement ID | FR-001(a) |
+| Objective | The availability list shows equipment with its calibration status, the filters work, and reserved slots equal the Confirmed reservations. |
+| Preconditions | Baseline equipment EQ-01…EQ-05 (§7); `studentA` logged in; EQ-01 has one Confirmed reservation R1 (day D 10:00–11:00) and one Cancelled reservation R2 (day D 14:00–15:00). |
+| Test Data | Filters: `category=Oscilloscope`; `calibrationStatus=Expired`; both together; availability of EQ-01 for day D. |
+| Steps | 1. List equipment without filter. 2. List with `category=Oscilloscope`. 3. List with `calibrationStatus=Expired`. 4. List with both filters. 5. Request availability of EQ-01 for day D. |
+| Expected Result | 1: five items, each with its calibration status. 2: EQ-01 and EQ-02 only. 3: EQ-03 only. 4: empty list (empty-list message in the UI). 5: exactly one reserved slot, 10:00–11:00 (R2 is not shown as reserved). |
+| Actual Result | – |
+| Pass/Fail | Not Executed |
+
+**TC-25 – Remove equipment that has a future reservation** (Functional, Negative; depends on assumption A-07)
+
+| Field | Content |
+|---|---|
+| Requirement ID | FR-005 |
+| Objective | Equipment with a future Confirmed reservation cannot be removed; equipment without one can. |
+| Preconditions | `tech1` logged in; EQ-01 has a future Confirmed reservation R; EQ-02 has none. |
+| Test Data | Remove EQ-01; remove EQ-02. |
+| Steps | 1. Remove EQ-01. 2. Read EQ-01 and R. 3. Remove EQ-02. 4. List equipment. |
+| Expected Result | 1: HTTP 409 `EQUIPMENT_HAS_ACTIVE_RESERVATIONS`. 2: EQ-01 still listed, R still Confirmed. 3: HTTP 200. 4: EQ-02 no longer listed. If the instructor decides otherwise for A-07, this case is revised. |
+| Actual Result | – |
+| Pass/Fail | Not Executed |
+
 ## 13. Traceability Matrix (Requirement → Test Case)
 
 | Requirement | Test cases | Coverage note |
 |---|---|---|
-| FR-001 | TC-01, TC-02, TC-03, TC-04, TC-17, TC-21 | normal, boundary ×2, negative, concurrency, invalid input |
-| FR-002 | TC-01, TC-05, TC-13 | |
+| FR-001 | TC-01, TC-02, TC-03, TC-04, TC-17, TC-21, TC-24 | clause (a) TC-24; (b) TC-02; (c) TC-03; (d) TC-04, TC-17; (e) TC-01; invalid input TC-21 |
+| FR-002 | TC-01, TC-05, TC-13 | clause (a) TC-01, TC-13; (b), (c) TC-05 |
 | FR-003 | TC-06, TC-07, TC-23 | |
 | FR-004 | TC-08, TC-09, TC-22 | |
-| FR-005 | TC-10, TC-21, TC-22 | |
+| FR-005 | TC-10, TC-21, TC-22, TC-25 | |
 | FR-006 | TC-11, TC-19, TC-20 | |
 | FR-007 | TC-12 | |
 | FR-008 | TC-13, TC-22 | |
@@ -504,8 +532,9 @@ Fields: Test Case ID, Requirement ID(s), Objective, Preconditions, Test Data, St
 | SEC-REQ-01 | TC-18 | |
 | SEC-REQ-02 | TC-19 | |
 | SEC-REQ-03 | TC-12, TC-23 | |
-| SEC-REQ-04 | TC-11, TC-20 | |
+| SEC-REQ-04 | TC-20 | |
+| SEC-REQ-07 | TC-11, TC-20 | |
 | SEC-REQ-05 | TC-21 | |
 | SEC-REQ-06 | TC-22 | |
 
-Totals: 23 test cases – 15 functional (TC-01…TC-15), 2 non-functional (TC-16, TC-17), 6 security (TC-18…TC-23); several functional cases (TC-11, TC-12) also carry security requirements. Every requirement in the SRS has at least one test case.
+Totals: 25 test cases – 17 functional (TC-01…TC-15, TC-24, TC-25), 2 non-functional (TC-16, TC-17), 6 security (TC-18…TC-23); TC-11 and TC-12 also carry security requirements. Every requirement in the SRS has at least one test case. Test types present: normal-flow, invalid-input, boundary, error-handling, fault-injection, performance, concurrency and security.

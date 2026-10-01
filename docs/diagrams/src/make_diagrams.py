@@ -10,6 +10,7 @@ UCFILL = {"core": "#dbe8fb", "inc": "#dcefd8", "ext": "#fde5c4"}
 # ----------------------------------------------------------------- use case
 def use_case():
     s = SVG(1240, 980)
+    s.fscale = 1.12
     s.rect(170, 40, 830, 780, stroke="#222")
     s.text(585, 66, "Smart Lab Equipment & Slot Reservation Portal", fs=16, weight="bold")
     RX, RY = 105, 32
@@ -88,6 +89,7 @@ def use_case():
 # ----------------------------------------------------------------- component
 def component():
     s = SVG(1420, 900)
+    s.fscale = 1.1
     s.text(710, 28, "Component Diagram - Smart Lab Equipment & Slot Reservation Portal", fs=16, weight="bold")
     for x, w, t in [(20, 190, "«tier» Client"), (230, 700, "«tier» Application Server"),
                     (950, 190, "«tier» Data"), (1160, 240, "«external»")]:
@@ -222,6 +224,7 @@ def sequence(name, title, parts, items, spacing=190, fs=12.5):
             frames.append(f)
     H = y + 50
     s = SVG(W, H)
+    s.fscale = 1.12
     s.text(W / 2, 28, title, fs=16, weight="bold")
     top = 52
     for i, (pid, label, kind) in enumerate(parts):
@@ -268,7 +271,7 @@ def sequence(name, title, parts, items, spacing=190, fs=12.5):
             _, a, t, yy, h = op
             lines = t.split("\n")
             wmax = max(len(l) for l in lines) * 6.4 + 22
-            x0 = min(xs[a] - 20, W - 10 - wmax)
+            x0 = min(xs[a] - 20, W - 34 - wmax)
             s.poly([(x0, yy), (x0 + wmax - 10, yy), (x0 + wmax, yy + 10), (x0 + wmax, yy + h), (x0, yy + h)],
                    fill="#fffbd6", stroke="#999", sw=1)
             for j, ln in enumerate(lines):
@@ -276,47 +279,62 @@ def sequence(name, title, parts, items, spacing=190, fs=12.5):
     s.save(os.path.join(OUT, name + ".svg")); save_drawio(s, os.path.join(OUT, name + ".drawio"), name)
 
 
-def sd01():
+def sd01a():
     parts = [("stu", "Student", "actor"), ("web", "Web Client\n(C-01)", "c"), ("api", "API Layer\n(C-02)", "c"),
              ("res", "Reservation Service\n(C-05)", "c"), ("cal", "Calibration Service\n(C-06)", "c"),
-             ("dal", "Data Access Layer\n(C-11)", "c"), ("nad", "Notification Adapter\n(C-09)", "c"),
-             ("ext", "Notification System", "ext")]
+             ("dal", "Data Access Layer\n(C-11)", "c")]
     it = [
         ("msg", "stu", "web", "select equipment, start, duration (<= 2 h)"),
         ("msg", "web", "api", "POST /api/v1/reservations"),
         ("self", "api", "validate session, role, inputs (C-03, C-04)"),
-        ("begin", "alt", "session / role / input invalid"),
+        ("begin", "alt", "session / role / input invalid - alternate flow A3"),
         ("msg", "api", "web", "401 / 403 / 422 error response", "ret"),
         ("else", "session, role and inputs valid"),
         ("msg", "api", "res", "reserve(studentId, equipmentId, start, duration)"),
-        ("msg", "res", "cal", "verifyCalibration(equipmentId)  «include» UC-09"),
+        ("msg", "res", "cal", "verifyCalibration(equipmentId)  \u00abinclude\u00bb UC-09"),
         ("msg", "cal", "dal", "getCalibrationStatus(equipmentId)"),
         ("msg", "dal", "cal", "status", "ret"),
         ("msg", "cal", "res", "status", "ret"),
         ("begin", "alt", "status != Valid (Expired / Pending) - alternate flow A1"),
         ("msg", "res", "api", "CalibrationInvalid + alternative instruments", "ret"),
         ("msg", "api", "web", "409 CALIBRATION_INVALID", "ret"),
+        ("msg", "web", "stu", "message: calibration required + alternatives", "ret"),
         ("else", "status = Valid"),
+        ("note", "res", "continues in part 2: overlap check,\nreservation, notification"),
+        ("end",), ("end",),
+    ]
+    sequence("sequence-01a", "Sequence Diagram 1 (part 1 of 2) - UC-03 Reserve Equipment Slot: request validation and calibration check",
+             parts, it, spacing=200)
+
+
+def sd01b():
+    parts = [("stu", "Student", "actor"), ("web", "Web Client\n(C-01)", "c"), ("api", "API Layer\n(C-02)", "c"),
+             ("res", "Reservation Service\n(C-05)", "c"), ("dal", "Data Access Layer\n(C-11)", "c"),
+             ("nad", "Notification Adapter\n(C-09)", "c"), ("ext", "Notification System", "ext")]
+    it = [
+        ("note", "res", "starts from part 1: session valid, calibration status = Valid"),
         ("msg", "res", "dal", "beginTransaction; lock equipment time slots"),
         ("msg", "res", "dal", "findOverlaps(equipment window, student window)"),
         ("msg", "dal", "res", "overlap result", "ret"),
-        ("begin", "alt", "overlap found - alternate flow A2"),
+        ("begin", "alt", "overlap found - alternate flow A2 (or A4 for the student's own overlap)"),
         ("msg", "res", "dal", "rollback"),
         ("msg", "res", "api", "SlotConflict + next available slots", "ret"),
-        ("msg", "api", "web", "409 SLOT_CONFLICT", "ret"),
+        ("msg", "api", "web", "409 SLOT_CONFLICT / STUDENT_SLOT_CONFLICT", "ret"),
+        ("msg", "web", "stu", "message: choose another slot", "ret"),
         ("else", "no overlap"),
-        ("self", "res", "generate unique token  «include» UC-10"),
+        ("self", "res", "generate unique token  \u00abinclude\u00bb UC-10"),
         ("msg", "res", "dal", "insertReservation(Confirmed, token); commit"),
         ("msg", "dal", "res", "reservation saved; slot locked", "ret"),
-        ("msg", "res", "nad", "sendConfirmation(reservation)  «include» UC-11"),
+        ("msg", "res", "nad", "sendConfirmation(reservation)  \u00abinclude\u00bb UC-11"),
         ("msg", "nad", "ext", "deliver email / notification"),
         ("note", "nad", "delivery failure is logged; reservation is kept (A-06)"),
         ("msg", "res", "api", "reservation (token, slot)", "ret"),
         ("msg", "api", "web", "201 Created {token, slot details}", "ret"),
-        ("end",), ("end",), ("end",),
         ("msg", "web", "stu", "confirmation screen (token, slot)", "ret"),
+        ("end",),
     ]
-    sequence("sequence-01", "Sequence Diagram 1 - UC-03 Reserve Equipment Slot", parts, it, spacing=185)
+    sequence("sequence-01b", "Sequence Diagram 1 (part 2 of 2) - UC-03 Reserve Equipment Slot: reservation, token and notification",
+             parts, it, spacing=190)
 
 
 def sd02():
@@ -350,7 +368,7 @@ def sd02():
         ("end",), ("end",),
         ("msg", "web", "tec", "return confirmation (penalty flag shown)", "ret"),
     ]
-    sequence("sequence-02", "Sequence Diagram 2 - UC-06 Return Equipment", parts, it, spacing=215)
+    sequence("sequence-02", "Sequence Diagram 2 - UC-06 Return Equipment", parts, it, spacing=195)
 
 
 def to_png(name, dpi=170):
@@ -361,6 +379,6 @@ def to_png(name, dpi=170):
 
 
 if __name__ == "__main__":
-    use_case(); component(); sd01(); sd02()
-    for n in ["use-case", "component", "sequence-01", "sequence-02"]:
+    use_case(); component(); sd01a(); sd01b(); sd02()
+    for n in ["use-case", "component", "sequence-01a", "sequence-01b", "sequence-02"]:
         to_png(n)

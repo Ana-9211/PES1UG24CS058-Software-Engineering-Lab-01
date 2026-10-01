@@ -13,9 +13,9 @@ Baseline files (kept unchanged in the repository root): `Requirements_Table.docx
 | Assignment item | Status before |
 |---|---|
 | IEEE-style SRS with introduction, FR, NFR, interfaces | missing → `SRS.md` |
-| Security objectives (≥ 2) and requirements (≥ 2) | missing → SRS §4 (4 objectives, 6 requirements) |
+| Security objectives (≥ 2) and requirements (≥ 2) | missing → SRS §4 (4 objectives, 7 requirements) |
 | IEEE-style Test Plan, sections 3, 4, 5, §5.1 Security Validation, traceability | missing → `Test_Plan.md` |
-| ≥ 7–10 test cases covering FR and NFR | missing → 23 test cases |
+| ≥ 7–10 test cases covering FR and NFR | missing → 25 test cases |
 | Architecture: component diagram + description, pattern, traceability, security architecture | missing → Architecture §2–§7, Figure 2 |
 | Design: ≥ 2 sequence diagrams, API design, error handling | missing → Design §8–§11, Figures 3–4 |
 | IDs for use cases other than UC-03; use-case descriptions for the rest | missing → UC-01…UC-12 assigned and described |
@@ -37,3 +37,20 @@ Baseline files (kept unchanged in the repository root): `Requirements_Table.docx
 
 ## 4. Information that Lab 1 does not provide (assumptions A-01…A-12 in SRS §2.6)
 Technology stack; definition of "peak load"; slot granularity / minimum duration; behaviour on notification failure; deletion of equipment with future reservations; whether the due date changes status automatically; deployment security (HTTPS). Each was resolved with a labelled assumption – none is stated as fact – and should be confirmed with the instructor.
+
+## 5. Final audit (strict-evaluator pass) – problems found and what was changed
+
+| # | Finding | Change |
+|---|---|---|
+| 1 | FR-001 and FR-002 bundled several verifiable statements in one sentence (not atomic). | Kept the IDs; rewrote them as clauses (a)–(e) and (a)–(c) with a per-clause pass criterion; tests now name the clause they cover. |
+| 2 | New requirements FR-006…FR-010, NFR-003 did not state where they came from. | Added a *Status / basis* column naming the Lab 1 source (diagram use case, UC-03 step/precondition, or the split of NFR-001). |
+| 3 | Several security requirements were not in Lab 1 and looked invented. | Added a *Basis* column; marked SEC-REQ-03, 05, 06, 07 as *Proposed* with the reason; kept only requirements tied to a Lab 1 use case or NFR-002. |
+| 4 | SEC-REQ-04 combined three obligations. | Split: SEC-REQ-04 (401 without a session) and SEC-REQ-07 (generic login error, no plain-text credentials); tests and matrix updated. |
+| 5 | FR-010 read the UC-03 precondition one specific way without saying so. | Added assumption A-14 and the condition under which FR-010/TC-15 would be dropped. |
+| 6 | "Relational database" was stated as fact; Lab 1 only says "database-level lock isolation". | Reworded to "database with transactions and locking (relational assumed – A-13)". |
+| 7 | Documents claimed to follow IEEE Std 830/829/1016 formally. | Replaced by "IEEE-style structure as requested by the assignment; no formal compliance claimed". |
+| 8 | Coverage gaps: availability display / filters (FR-001(a)) and equipment removal with future reservations (A-07) had no dedicated test; test data lacked the accounts needed by TC-16/17 and equipment EQ-05 for TC-05. | Added TC-24, TC-25 (suite is now 25); extended test data (§7). |
+| 9 | API section did not say why an API exists or which endpoints are additions. | §9 now cites NFR-002 ("endpoints") and marks endpoints 10 and 12 as the only design additions. |
+| 10 | Component diagram: the *ILog* arrow from the services package suggested all four services log, while the table says three. | Caption and §4.2 now state exactly which components use each interface. |
+| 11 | Diagram text was too small when printed (sequence diagram with 8 participants on a portrait page). | UC-03 split into two readable parts (SD-01 part 1 / part 2); all figures are on landscape pages with larger fonts. |
+| 12 | Authorization-path arrow crossed another arrow in the component diagram. | Re-routed. |

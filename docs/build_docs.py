@@ -40,8 +40,8 @@ pre { background: #f1f1f4; padding: 6px; font-size: 8.8pt; white-space: pre-wrap
 blockquote { border-left: 3px solid #c9a227; margin: 8px 0; padding: 2px 10px; background: #fff8e0; }
 img { max-width: 100%; display: block; margin: 8px auto; }
 .fig { page-break-inside: avoid; }
-.land { page: land; }
-.land img { max-height: 172mm; width: auto; }
+.land { page: land; width: 273mm; margin: 0; }
+.land img { width: auto; max-width: 273mm; max-height: 163mm; margin: 0 auto; }
 .portrait-img img { max-height: 235mm; width: auto; }
 """
 
@@ -56,9 +56,12 @@ def build_pdf(name, text):
 
     def wrap(m):
         src = m.group(2)
-        cls = "land" if "component" in src else "portrait-img"
+        cls = "land"
         return f'<div class="fig {cls}"><img alt="{m.group(1)}" src="{src}"/><p style="text-align:center"><em>{m.group(1)}</em></p></div>'
     body = re.sub(r'<p><img alt="([^"]*)" src="([^"]*)" ?/></p>', wrap, body)
+    # keep a heading together with the (landscape) figure that follows it
+    body = re.sub(r'((?:<h2[^>]*>[^<]*</h2>\s*)?<h3[^>]*>[^<]*</h3>\s*(?:<p>[^<]*</p>\s*)?<div class="fig land">)',
+                  r'<div style="page-break-before:always"></div>', body)
     base = os.path.dirname(os.path.join(HERE, name + ".md")).replace("\\", "/")
     page = f'<html><head><meta charset="utf-8"><base href="file:///{base}/"><style>{CSS}</style></head><body>{body}</body></html>'
     tmp = os.path.join(tempfile.gettempdir(), os.path.basename(name) + ".html")
@@ -98,6 +101,8 @@ def add_inline(par, children, size=None):
         elif t.type == "em_close":
             ital = False; continue
         elif t.type == "html_inline":
+            if t.content.lower().startswith("<br"):
+                par.add_run().add_break()
             continue
         else:
             continue
@@ -137,11 +142,11 @@ def build_docx(name, text):
                 im = imgs[0]
                 path = os.path.normpath(os.path.join(base, im.attrs["src"]))
                 w, h = Image.open(path).size
-                wide = "component" in path
+                wide = True
                 if wide:
                     ns = d.add_section(); ns.orientation = WD_ORIENT.LANDSCAPE
                     ns.page_width, ns.page_height = ns.page_height, ns.page_width
-                    maxw, maxh = 9.4, 6.2
+                    maxw, maxh = 9.4, 6.0
                 else:
                     maxw, maxh = 6.7, 8.6
                 sc = min(maxw / w, maxh / h)
