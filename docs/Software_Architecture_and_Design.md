@@ -60,7 +60,7 @@ Why not alternatives: *MVC* describes the internal structure of a UI application
 
 ### 4.1 Component diagram
 
-![Figure 2 – UML Component Diagram](diagrams/component.png)
+![Figure 2 – UML Component Diagram (draw.io source: diagrams/component.drawio)](diagrams/component.png)
 
 Dashed arrows are UML dependencies (the arrow points to the component that provides the interface). The *Business Services* package groups C-05…C-08; arrows crossing its border apply to the contained services as listed in the table.
 
@@ -222,13 +222,13 @@ The two sequence diagrams model use cases UC-03 (the core use case specified in 
 
 ### 10.1 SD-01 – UC-03 Reserve Equipment Slot
 
-![Figure 3 – Sequence Diagram 1: Reserve Equipment Slot](diagrams/sequence-01.png)
+![Figure 3 – Sequence Diagram 1: Reserve Equipment Slot (draw.io source: diagrams/sequence-01.drawio)](diagrams/sequence-01.png)
 
 Covers: FR-001, FR-002, FR-009, FR-010, NFR-001, NFR-003; alternate flows A1 (calibration), A2 (conflict), A3 (invalid session/input); the «include» use cases UC-09, UC-10, UC-11. Steps 4–5 of the Lab 1 flow (calibration, overlap) appear in the same order. The overlap check and the insert happen inside one locked transaction (DD-02). The request to the Notification System is submitted after commit (DD-04).
 
 ### 10.2 SD-02 – UC-06 Return Equipment
 
-![Figure 4 – Sequence Diagram 2: Return Equipment](diagrams/sequence-02.png)
+![Figure 4 – Sequence Diagram 2: Return Equipment (draw.io source: diagrams/sequence-02.drawio)](diagrams/sequence-02.png)
 
 Covers: FR-004, NFR-002, SEC-REQ-01, SEC-REQ-02, SEC-REQ-06; the «extend» use case UC-12 appears as the `opt` fragment taken only when `returnTime > slotEnd`. The security filter rejects expired sessions (401) and non-technician roles (403) before the service is called.
 

@@ -30,7 +30,8 @@ h1 { font-size: 20pt; border-bottom: 2px solid #1f3a6e; padding-bottom: 4px; col
 h2 { font-size: 14pt; color: #1f3a6e; margin-top: 18px; border-bottom: 1px solid #ccd; page-break-after: avoid; }
 h3 { font-size: 11.5pt; color: #1f3a6e; page-break-after: avoid; }
 h4 { font-size: 10.5pt; page-break-after: avoid; }
-table { border-collapse: collapse; width: 100%; margin: 8px 0 12px; font-size: 8.8pt; page-break-inside: auto; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0 12px; font-size: 8.8pt; page-break-inside: avoid; }
+p:has(+ table) { page-break-after: avoid; }
 tr { page-break-inside: avoid; }
 th, td { border: 1px solid #99a; padding: 3px 5px; vertical-align: top; text-align: left; }
 th { background: #e4eaf6; }
