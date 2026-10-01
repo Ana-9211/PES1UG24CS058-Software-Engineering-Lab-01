@@ -11,6 +11,7 @@ class SVG:
         self.prims = []   # structured copy of everything drawn (used for the draw.io export)
         self._rec = True
         self.fscale = 1.0
+        self.connect = False   # attach edges to shapes in the draw.io export
 
     def rect(self, x, y, w, h, fill="none", stroke="#222", sw=1.4, rx=0, dash=None):
         self._p("rect", x=x, y=y, w=w, h=h, fill=fill, stroke=stroke, sw=sw, dash=dash)
@@ -136,19 +137,50 @@ def save_drawio(svg, path, name):
                 e["end"] = "open" if p["style"] == "open" else "block"
                 e["endFill"] = 0 if p["style"] == "open" else 1
     for p in prims:
+        if p["kind"] in ("rect", "ellipse"):
+            p["_id"] = new_id()
+    verts = [p for p in prims if p["kind"] in ("rect", "ellipse") and p.get("rx", 9) >= 1]
+
+    def bbox(v):
+        if v["kind"] == "rect":
+            return v["x"], v["y"], v["w"], v["h"]
+        return v["cx"] - v["rx"], v["cy"] - v["ry"], 2 * v["rx"], 2 * v["ry"]
+
+    def attach(pt):
+        """Return (vertex, fx, fy) if pt lies on the border of a shape (smallest one wins)."""
+        best = None
+        for v in verts:
+            x, y, w, h = bbox(v)
+            if v["kind"] == "rect":
+                if w > 600 or h > 600:        # tier frames / system boundary are containers, not link targets
+                    continue
+                on = (x - 2 <= pt[0] <= x + w + 2 and y - 2 <= pt[1] <= y + h + 2 and
+                      (abs(pt[0] - x) <= 2 or abs(pt[0] - x - w) <= 2 or abs(pt[1] - y) <= 2 or abs(pt[1] - y - h) <= 2))
+            else:
+                dx, dy = (pt[0] - v["cx"]) / v["rx"], (pt[1] - v["cy"]) / v["ry"]
+                on = abs(math.hypot(dx, dy) - 1) <= 0.04
+            if on and (best is None or w * h < best[1]):
+                best = (v, w * h)
+        if not best:
+            return None
+        v = best[0]
+        x, y, w, h = bbox(v)
+        return v, (pt[0] - x) / w, (pt[1] - y) / h
+
+    for p in prims:
         k = p["kind"]
         if k == "rect":
             st = (f"rounded=0;whiteSpace=wrap;html=1;fillColor={p['fill']};strokeColor={p['stroke']};"
                   f"strokeWidth={p['sw']};")
             if p["dash"]:
                 st += "dashed=1;dashPattern=6 4;"
-            cells.append(f'<mxCell id="{new_id()}" value="" style="{st}" vertex="1" parent="1">'
+            cells.append(f'<mxCell id="{p["_id"]}" value="" style="{st}" vertex="1" parent="1">'
                          f'<mxGeometry x="{p["x"]:.1f}" y="{p["y"]:.1f}" width="{p["w"]:.1f}" height="{p["h"]:.1f}" as="geometry"/></mxCell>')
         elif k == "ellipse":
             if p["rx"] < 1:
                 continue
             st = f"ellipse;whiteSpace=wrap;html=1;fillColor={p['fill']};strokeColor={p['stroke']};strokeWidth={p['sw']};"
-            cells.append(f'<mxCell id="{new_id()}" value="" style="{st}" vertex="1" parent="1">'
+            cells.append(f'<mxCell id="{p["_id"]}" value="" style="{st}" vertex="1" parent="1">'
                          f'<mxGeometry x="{p["cx"]-p["rx"]:.1f}" y="{p["cy"]-p["ry"]:.1f}" width="{2*p["rx"]:.1f}" height="{2*p["ry"]:.1f}" as="geometry"/></mxCell>')
         elif k == "poly":
             xs = [q[0] for q in p["pts"]]
@@ -167,7 +199,16 @@ def save_drawio(svg, path, name):
                 st += "dashed=1;dashPattern=6 4;"
             mid = "".join(f'<mxPoint x="{x:.1f}" y="{y:.1f}"/>' for x, y in pts[1:-1])
             arr = f'<Array as="points">{mid}</Array>' if mid else ""
-            cells.append(f'<mxCell id="{new_id()}" value="" style="{st}" edge="1" parent="1">'
+            ends = ""
+            if svg.connect:
+                a0, a1 = attach(pts[0]), attach(pts[-1])
+                if a0:
+                    st += f"exitX={a0[1]:.4f};exitY={a0[2]:.4f};exitPerimeter=0;"
+                    ends += f' source="{a0[0]["_id"]}"'
+                if a1:
+                    st += f"entryX={a1[1]:.4f};entryY={a1[2]:.4f};entryPerimeter=0;"
+                    ends += f' target="{a1[0]["_id"]}"'
+            cells.append(f'<mxCell id="{new_id()}" value="" style="{st}" edge="1"{ends} parent="1">'
                          f'<mxGeometry relative="1" as="geometry"><mxPoint x="{pts[0][0]:.1f}" y="{pts[0][1]:.1f}" as="sourcePoint"/>'
                          f'<mxPoint x="{pts[-1][0]:.1f}" y="{pts[-1][1]:.1f}" as="targetPoint"/>{arr}</mxGeometry></mxCell>')
         elif k == "text":

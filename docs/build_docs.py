@@ -41,7 +41,7 @@ blockquote { border-left: 3px solid #c9a227; margin: 8px 0; padding: 2px 10px; b
 img { max-width: 100%; display: block; margin: 8px auto; }
 .fig { page-break-inside: avoid; }
 .land { page: land; width: 273mm; margin: 0; }
-.land img { width: auto; max-width: 273mm; max-height: 163mm; margin: 0 auto; }
+.land img { width: auto; max-width: 273mm; max-height: 148mm; margin: 0 auto; }
 .portrait-img img { max-height: 235mm; width: auto; }
 """
 
@@ -59,9 +59,14 @@ def build_pdf(name, text):
         cls = "land"
         return f'<div class="fig {cls}"><img alt="{m.group(1)}" src="{src}"/><p style="text-align:center"><em>{m.group(1)}</em></p></div>'
     body = re.sub(r'<p><img alt="([^"]*)" src="([^"]*)" ?/></p>', wrap, body)
-    # keep a heading together with the (landscape) figure that follows it
-    body = re.sub(r'((?:<h2[^>]*>[^<]*</h2>\s*)?<h3[^>]*>[^<]*</h3>\s*(?:<p>[^<]*</p>\s*)?<div class="fig land">)',
-                  r'<div style="page-break-before:always"></div>', body)
+    body = re.sub(r'<thead>\s*<tr>(?:\s*<th>\s*</th>)+\s*</tr>\s*</thead>', '', body)
+    # long tables may break across pages; short ones stay together
+    body = re.sub(r'<table>.*?</table>',
+                  lambda m: m.group(0).replace('<table>', '<table style="page-break-inside:auto">', 1)
+                  if m.group(0).count('<tr>') > 14 else m.group(0), body, flags=re.S)
+    # keep a heading (and its intro sentence) on the same landscape page as the figure that follows it
+    body = re.sub(r'((?:<h2[^>]*>[^<]*</h2>\s*)?<h3[^>]*>[^<]*</h3>\s*(?:<p>[^<]*</p>\s*)?)<div class="fig land">',
+                  r'<div class="fig land">\1', body)
     base = os.path.dirname(os.path.join(HERE, name + ".md")).replace("\\", "/")
     page = f'<html><head><meta charset="utf-8"><base href="file:///{base}/"><style>{CSS}</style></head><body>{body}</body></html>'
     tmp = os.path.join(tempfile.gettempdir(), os.path.basename(name) + ".html")
@@ -188,6 +193,8 @@ def build_docx(name, text):
                 elif tk.type == "tr_close":
                     rows.append(cur)
                 j += 1
+            if all(not any(k.content.strip() for k in (c[1] or []) if k.type == 'text') for c in rows[0]):
+                rows = rows[1:]
             ncol = max(len(r) for r in rows)
             tb = d.add_table(rows=len(rows), cols=ncol)
             tb.style = "Table Grid"; tb.alignment = WD_TABLE_ALIGNMENT.CENTER

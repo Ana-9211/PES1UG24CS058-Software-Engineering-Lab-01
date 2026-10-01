@@ -11,6 +11,7 @@ UCFILL = {"core": "#dbe8fb", "inc": "#dcefd8", "ext": "#fde5c4"}
 def use_case():
     s = SVG(1240, 980)
     s.fscale = 1.12
+    s.connect = True
     s.rect(170, 40, 830, 780, stroke="#222")
     s.text(585, 66, "Smart Lab Equipment & Slot Reservation Portal", fs=16, weight="bold")
     RX, RY = 105, 32
@@ -90,6 +91,7 @@ def use_case():
 def component():
     s = SVG(1420, 900)
     s.fscale = 1.1
+    s.connect = True
     s.text(710, 28, "Component Diagram - Smart Lab Equipment & Slot Reservation Portal", fs=16, weight="bold")
     for x, w, t in [(20, 190, "«tier» Client"), (230, 700, "«tier» Application Server"),
                     (950, 190, "«tier» Data"), (1160, 240, "«external»")]:
