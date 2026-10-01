@@ -225,11 +225,11 @@ The two sequence diagrams model use cases UC-03 (the core use case specified in 
 
 UC-03 has two diagram parts because the interaction involves eight participants; splitting it keeps the text legible. Part 1 ends in the branch "status = Valid" and part 2 starts from it.
 
+Covers: FR-001, FR-002, FR-009, FR-010, NFR-001, NFR-003; alternate flows A1 (calibration), A2 (conflict), A3 (invalid session/input), A4 (student's own overlap); the «include» use cases UC-09, UC-10, UC-11. Steps 4–8 of the Lab 1 flow (calibration, overlap check, token, lock, notification) appear in the same order. The overlap check and the insert happen inside one locked transaction (DD-02). The request to the Notification System is submitted after commit (DD-04).
+
 ![Figure 3 – Sequence Diagram 1, part 1 of 2: request validation and calibration check (draw.io source: diagrams/sequence-01a.drawio)](diagrams/sequence-01a.png)
 
 ![Figure 4 – Sequence Diagram 1, part 2 of 2: reservation, token and notification (draw.io source: diagrams/sequence-01b.drawio)](diagrams/sequence-01b.png)
-
-Covers: FR-001, FR-002, FR-009, FR-010, NFR-001, NFR-003; alternate flows A1 (calibration), A2 (conflict), A3 (invalid session/input), A4 (student's own overlap); the «include» use cases UC-09, UC-10, UC-11. Steps 4–8 of the Lab 1 flow (calibration, overlap check, token, lock, notification) appear in the same order. The overlap check and the insert happen inside one locked transaction (DD-02). The request to the Notification System is submitted after commit (DD-04).
 
 ### 10.2 SD-02 – UC-06 Return Equipment
 
