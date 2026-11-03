@@ -35,12 +35,15 @@ Total: 42 points (Sprint 1: 34, Sprint 2: 8). Each story has an implementation t
 - **SCRUMBPS Sprint 1.** Goal: deliver all High-priority reservation and security requirements (FR-001, FR-002, FR-004, NFR-001, NFR-002) with their supporting tasks. Scope 34 points, completed 34.
 - **SCRUMBPS Sprint 2.** Goal: deliver the remaining Medium-priority requirements (FR-003, FR-005) with their supporting tasks, completing the full backlog. Scope 8 points.
 
+- **SCRUMBPS Sprint 3.** Demo sprint started to capture the Active Sprint board. It holds FR-003 and FR-005 (8 points), both Done, and is still active. Use Complete sprint to close it.
+
 ## 4. Evidence
 
 | File | Shows |
 |---|---|
 | `evidence/backlog_epics_and_stories.png` | Epics with their stories and tasks, priorities, status |
 | `evidence/story_points_sprint1.png` | Sprint 1 completed issues with story points (34) |
+| `evidence/active_sprint_board.png` | Active Sprint board (To Do / In Progress / Done) |
 | `evidence/burnup_chart_sprint1.png` | Sprint 1 burnup chart (Reports) |
 | `evidence/sprint1_report_burndown.png` | Sprint 1 report with burndown against the guideline |
 | `evidence/sprint2_report.png` | Sprint 2 report, story points (8) |
