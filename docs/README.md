@@ -10,4 +10,4 @@
 | Diagrams: editable **draw.io** (`.drawio`) + SVG + PNG | `diagrams/` (use-case, component, sequence-01a, sequence-01b, sequence-02) | open the `.drawio` files at app.diagrams.net or in draw.io desktop |
 
 Regenerate: `python diagrams/src/make_diagrams.py` then `python build_docs.py` (needs Python, markdown, markdown-it-py, python-docx, pymupdf, Pillow and Edge/Chrome for PDF).
-The Lab 1 files in the repository root are unchanged.
+The Lab 1 baseline files (now in the repository's `Lab-1/` folder) are unchanged.

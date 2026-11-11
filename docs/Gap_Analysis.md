@@ -1,6 +1,6 @@
 # Gap Analysis – Lab 1 baseline vs. Mini-Project Part-1
 
-Baseline files (kept unchanged in the repository root): `Requirements_Table.docx`, `UseCase_Flow_Specification.docx`, `UML_UseCase_Diagram.pdf`. No source code exists in the repository.
+Baseline files (kept unchanged, now stored in the repository's `Lab-1/` folder): `Requirements_Table.docx`, `UseCase_Flow_Specification.docx`, `UML_UseCase_Diagram.pdf`. No source code for the portal exists yet (Part-1 is documentation only; the other folders in the repository are separate course labs).
 
 ## 1. EXISTING
 | Item | Content |
