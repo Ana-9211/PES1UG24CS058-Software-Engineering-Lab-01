@@ -1,4 +1,4 @@
-# Lab 7: Fuzzing for Input Validation Bugs
+﻿# Lab 7: Fuzzing for Input Validation Bugs
 
 Repo assigned: L6_L7_01 Water Utility Billing. Fuzzed with Hypothesis and pytest.
 
@@ -11,7 +11,7 @@ Repo assigned: L6_L7_01 Water Utility Billing. Fuzzed with Hypothesis and pytest
 | `test_processor.py` | Completed Hypothesis fuzz tests |
 | `test_processor_starter.py` | Original starter test file |
 | `Lab7_Fuzz_Testing_Report_PES1UG24CS058.pdf` | PDF with all screenshots (Steps 2, 4, 5, 6) |
-| `evidence/` | Individual screenshot images |
+| `evidence/` | Individual real terminal screenshots (PNG) |
 
 ## Bugs found
 
