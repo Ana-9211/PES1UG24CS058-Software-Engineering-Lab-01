@@ -13,6 +13,6 @@ A small Python module that computes tiered water billing by customer type, handl
 | `water_utility_billing.py` | The module under test |
 | `test_water_utility.py` | Starter test file |
 
-Keep all your Lab 6 work in this `LAB6` folder. Lab 7 will be added to this repo later.
+Keep all your Lab 6 work in this `LAB6` folder. Lab 7 is in the `Lab-7/` folder of this repo.
 
 Refer to the lab handout for instructions.
